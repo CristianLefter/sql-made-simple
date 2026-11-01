@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Made Simple Lab</title>
+<meta name="description" content="Run SQL against the SimpleStore sample database in your browser. Nothing to install, no account.">
+<style>
+  :root {
+    --bg: #f7f6f2; --panel: #ffffff; --ink: #1d2024; --muted: #5b6168; --line: #d9d6cc;
+    --accent: #1f5fbf; --accent-ink: #ffffff; --ok: #1d7a3e; --ok-bg: #e6f4ea;
+    --err: #b3261e; --err-bg: #fbeae8; --null: #8a5a00; --code-bg: #f1efe8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15171a; --panel: #1e2125; --ink: #ecebe6; --muted: #a3a8ae; --line: #373b41;
+      --accent: #7fb0ff; --accent-ink: #0d1b33; --ok: #7dd69a; --ok-bg: #16301f;
+      --err: #ff9d95; --err-bg: #3a1c1a; --null: #e0b25c; --code-bg: #272a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header h1 { font-size: 1.35rem; margin: 8px 0 2px; }
+  header p { margin: 0 0 16px; color: var(--muted); }
+  .grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr) 280px; } }
+  section, aside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  label, .label { display: block; font-weight: 600; margin-bottom: 6px; }
+  textarea { width: 100%; min-height: 150px; resize: vertical; padding: 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--code-bg); color: var(--ink);
+    font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  textarea:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px; }
+  .hint { color: var(--muted); font-size: .9rem; margin: 6px 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, select { min-height: 44px; padding: 0 16px; border-radius: 8px; font: inherit;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  select { width: 100%; max-width: 100%; }
+  #results { margin-top: 16px; min-height: 48px; }
+  .msg { padding: 10px 12px; border-radius: 8px; margin: 8px 0; }
+  .msg.err { background: var(--err-bg); color: var(--err); border: 1px solid var(--err); }
+  .msg.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); }
+  .msg.info { background: var(--code-bg); border: 1px solid var(--line); }
+  .meta { color: var(--muted); font-size: .9rem; margin: 4px 0; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin: 6px 0 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: var(--code-bg); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .null { color: var(--null); font-style: italic; }
+  aside h2 { font-size: 1rem; margin: 0 0 8px; }
+  aside details { margin-bottom: 8px; }
+  aside summary { cursor: pointer; font-weight: 600; }
+  aside ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); font-size: .92rem; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  footer { color: var(--muted); font-size: .85rem; margin: 16px 0; }
+  .challenge { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .prompt { margin: 6px 0 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SQL Made Simple Lab</h1>
+    <p>The SimpleStore sample database, running in your browser. Nothing to install, no account.</p>
+  </header>
+
+  <div class="grid">
+    <section aria-labelledby="editor-label">
+      <label for="sql" id="editor-label">Your SQL</label>
+      <textarea id="sql" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+        aria-describedby="sql-hint">SELECT COUNT(*) FROM Customers;</textarea>
+      <p class="hint" id="sql-hint">Press Ctrl+Enter (or Cmd+Enter on a Mac) to run. The first query should return 5.</p>
+      <div class="row">
+        <button id="run" class="primary" type="button" disabled>Run</button>
+        <button id="reset" type="button" disabled>Reset database</button>
+        <button id="clear" type="button">Clear</button>
+      </div>
+
+      <div id="results" role="region" aria-label="Results" aria-live="polite">
+        <p class="meta">Loading the database...</p>
+      </div>
+
+      <div class="challenge">
+        <label for="challenge-select">Check my answer</label>
+        <select id="challenge-select" disabled aria-describedby="challenge-prompt">
+          <option value="">Choose a task...</option>
+        </select>
+        <p class="prompt" id="challenge-prompt" aria-live="polite"></p>
+        <button id="check" type="button" disabled>Check my answer</button>
+      </div>
+    </section>
+
+    <aside aria-labelledby="schema-title">
+      <h2 id="schema-title">SimpleStore tables</h2>
+      <div id="schema"></div>
+      <p class="hint">Changes are not saved. Reload the page or press Reset to get SimpleStore back as it was.</p>
+    </aside>
+  </div>
+
+  <footer>
+    <span id="engine"></span>
+  </footer>
+</div>
+
+<script src="vendor/sql-wasm.js"></script>
+<script>
+(function () {
+  'use strict';
+  var MAX_ROWS = 500;
+  var SQLmod = null, db = null, setupSql = '', challenges = [];
+  var $ = function (id) { return document.getElementById(id); };
+  var els = { sql: $('sql'), run: $('run'), reset: $('reset'), clear: $('clear'),
+    results: $('results'), schema: $('schema'), select: $('challenge-select'),
+    prompt: $('challenge-prompt'), check: $('check'), engine: $('engine') };
+
+  function clearNode(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function message(kind, text) {
+    var m = el('div', 'msg ' + kind, text);
+    if (kind === 'err') m.setAttribute('role', 'alert');
+    return m;
+  }
+
+  function openDatabase() {
+    var d = new SQLmod.Database();
+    d.run(setupSql);
+    d.run('PRAGMA foreign_keys = ON;');
+    return d;
+  }
+
+  function renderTable(cols, rows) {
+    var wrap = el('div', 'tablewrap');
+    var t = el('table');
+    var thead = el('thead'), hr = el('tr');
+    cols.forEach(function (c) { var th = el('th', null, c); th.scope = 'col'; hr.appendChild(th); });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = el('tbody');
+    rows.slice(0, MAX_ROWS).forEach(function (r) {
+      var tr = el('tr');
+      r.forEach(function (v) {
+        var td;
+        if (v === null) { td = el('td'); td.appendChild(el('span', 'null', 'NULL')); }
+        else if (typeof v === 'number') { td = el('td', 'num', String(v)); }
+        else if (v instanceof Uint8Array) { td = el('td', null, '[binary ' + v.length + ' bytes]'); }
+        else { td = el('td', null, String(v)); }
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); wrap.appendChild(t);
+    return wrap;
+  }
+
+  function show(nodes) {
+    clearNode(els.results);
+    nodes.forEach(function (n) { els.results.appendChild(n); });
+  }
+
+  function runSql() {
+    var sql = els.sql.value;
+    if (!sql.trim()) { show([message('info', 'Type a query first.')]); return; }
+    var out = [];
+    try {
+      var sets = db.exec(sql);
+      if (!sets.length) {
+        out.push(message('ok', 'Done. The statement ran and returned no rows. Rows changed: ' + db.getRowsModified() + '.'));
+      }
+      sets.forEach(function (s, i) {
+        if (sets.length > 1) out.push(el('p', 'meta', 'Result ' + (i + 1) + ' of ' + sets.length));
+        out.push(renderTable(s.columns, s.values));
+        var note = s.values.length + (s.values.length === 1 ? ' row, ' : ' rows, ') +
+          s.columns.length + (s.columns.length === 1 ? ' column' : ' columns');
+        if (s.values.length > MAX_ROWS) note += ' (showing the first ' + MAX_ROWS + ')';
+        out.push(el('p', 'meta', note));
+      });
+    } catch (e) {
+      out.push(message('err', 'The database says: ' + e.message));
+    }
+    show(out);
+    refreshSchema();
+  }
+
+  function refreshSchema() {
+    clearNode(els.schema);
+    var names = db.exec("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    if (!names.length) { els.schema.appendChild(el('p', 'hint', 'No tables.')); return; }
+    names[0].values.forEach(function (row) {
+      var name = row[0];
+      var d = el('details'); d.open = true;
+      var count = db.exec('SELECT COUNT(*) FROM "' + name.replace(/"/g, '""') + '"')[0].values[0][0];
+      d.appendChild(el('summary', null, name + ' (' + count + ' rows)'));
+      var ul = el('ul');
+      db.exec('PRAGMA table_info("' + name.replace(/"/g, '""') + '")')[0].values.forEach(function (c) {
+        ul.appendChild(el('li', null, c[1] + (c[2] ? ' ' + c[2] : '')));
+      });
+      d.appendChild(ul); els.schema.appendChild(d);
+    });
+  }
+
+  // ---- answer checking -------------------------------------------------
+  function norm(v) { return v === null ? null : (typeof v === 'number' ? v : String(v)); }
+  function rowKey(r) { return JSON.stringify(r.map(norm)); }
+  function lastSet(sql) {
+    var sets = db.exec(sql);
+    return sets.length ? sets[sets.length - 1] : null;
+  }
+  function compare(got, want, mode) {
+    if (!got) return { ok: false, text: 'Your query returned no result set. A SELECT query is expected here.' };
+    var gc = got.columns.map(function (c) { return c.toLowerCase(); });
+    var wc = want.columns.map(function (c) { return c.toLowerCase(); });
+    if (gc.join('|') !== wc.join('|')) {
+      return { ok: false, text: 'Not quite. The columns should be: ' + want.columns.join(', ') +
+        ' (in that order). Yours are: ' + (got.columns.join(', ') || 'none') + '.' };
+    }
+    if (got.values.length !== want.values.length) {
+      return { ok: false, text: 'Not quite. Expected ' + want.values.length + ' rows, but your query returned ' +
+        got.values.length + '.' };
+    }
+    var a = got.values.map(rowKey), b = want.values.map(rowKey);
+    if (mode === 'multiset') { a.sort(); b.sort(); }
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return { ok: false, text: 'Right shape, but some values differ from the expected result. Check which table and columns you used.' };
+      }
+    }
+    return { ok: true, text: 'Correct. Your result matches the expected result' +
+      (mode === 'multiset' ? ' (row order is not compared).' : ' (including row order).') };
+  }
+
+  function checkAnswer() {
+    var id = els.select.value;
+    var ch = challenges.filter(function (c) { return c.id === id; })[0];
+    if (!ch) { show([message('info', 'Choose a task first.')]); return; }
+    var out = [];
+    try {
+      var got = lastSet(els.sql.value);
+      var want = lastSet(ch.solution);
+      var res = compare(got, want, ch.mode);
+      out.push(message(res.ok ? 'ok' : 'err', res.text));
+      if (got) {
+        out.push(renderTable(got.columns, got.values));
+        out.push(el('p', 'meta', got.values.length + ' rows, ' + got.columns.length + ' columns'));
+      }
+    } catch (e) {
+      out.push(message('err', 'The database says: ' + e.message));
+    }
+    show(out);
+  }
+
+  function setupChallenges() {
+    challenges.forEach(function (c) {
+      var o = el('option', null, c.title); o.value = c.id; els.select.appendChild(o);
+    });
+    els.select.addEventListener('change', function () {
+      var c = challenges.filter(function (x) { return x.id === els.select.value; })[0];
+      els.prompt.textContent = c ? c.prompt : '';
+    });
+  }
+
+  function start() {
+    Promise.all([
+      initSqlJs({ locateFile: function (f) { return 'vendor/' + f; } }),
+      fetch('setup.sql').then(function (r) { if (!r.ok) throw new Error('setup.sql ' + r.status); return r.text(); }),
+      fetch('challenges.json').then(function (r) { if (!r.ok) throw new Error('challenges.json ' + r.status); return r.json(); })
+    ]).then(function (parts) {
+      SQLmod = parts[0]; setupSql = parts[1]; challenges = parts[2];
+      db = openDatabase();
+      setupChallenges();
+      var params = new URLSearchParams(location.search);
+      if (params.get('q')) els.sql.value = params.get('q');
+      if (params.get('challenge')) {
+        els.select.value = params.get('challenge');
+        els.select.dispatchEvent(new Event('change'));
+      }
+      els.run.disabled = els.reset.disabled = els.select.disabled = els.check.disabled = false;
+      refreshSchema();
+      var v = db.exec('SELECT sqlite_version()')[0].values[0][0];
+      els.engine.textContent = 'SQLite ' + v + ' running in your browser (sql.js).';
+      show([el('p', 'meta', 'Ready. Press Run.')]);
+      document.documentElement.setAttribute('data-ready', 'true');
+    }).catch(function (e) {
+      show([message('err', 'The lab could not start: ' + e.message + '. If you opened this file directly from your computer, serve it over http instead (see the README).')]);
+    });
+  }
+
+  els.run.addEventListener('click', runSql);
+  els.check.addEventListener('click', checkAnswer);
+  els.clear.addEventListener('click', function () { els.sql.value = ''; els.sql.focus(); });
+  els.reset.addEventListener('click', function () {
+    db = openDatabase(); refreshSchema();
+    show([message('ok', 'The database was reset to SimpleStore as shipped.')]);
+  });
+  els.sql.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if (!els.run.disabled) runSql(); }
+  });
+  start();
+})();
+</script>
+</body>
+</html>

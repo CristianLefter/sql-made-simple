@@ -1,0 +1,29 @@
+{
+  "chapter": 1,
+  "cases": [
+    {"id": "count-customers", "sql": "SELECT COUNT(*) FROM Customers;", "columns": ["COUNT(*)"], "rows": [[5]], "mode": "multiset"},
+    {"id": "name-and-city", "sql": "SELECT CustomerName, City FROM Customers;", "columns": ["CustomerName", "City"],
+     "rows": [["Maya Chen","London"],["Daniel Reed","Bristol"],["Sofia Patel","London"],["Leo Martin","Manchester"],["Amira Hassan","Leeds"]], "mode": "multiset"},
+    {"id": "names-only", "sql": "SELECT CustomerName FROM Customers;", "columns": ["CustomerName"],
+     "rows": [["Maya Chen"],["Daniel Reed"],["Sofia Patel"],["Leo Martin"],["Amira Hassan"]], "mode": "multiset"},
+    {"id": "cities-only-keeps-duplicates", "sql": "SELECT City FROM Customers;", "columns": ["City"],
+     "rows": [["London"],["Bristol"],["London"],["Manchester"],["Leeds"]], "mode": "multiset"},
+    {"id": "city-then-name", "sql": "SELECT City, CustomerName FROM Customers;", "columns": ["City", "CustomerName"],
+     "rows": [["London","Maya Chen"],["Bristol","Daniel Reed"],["London","Sofia Patel"],["Manchester","Leo Martin"],["Leeds","Amira Hassan"]], "mode": "multiset"},
+    {"id": "where-london", "sql": "SELECT CustomerName, City FROM Customers WHERE City = 'London';", "columns": ["CustomerName", "City"],
+     "rows": [["Maya Chen","London"],["Sofia Patel","London"]], "mode": "multiset"},
+    {"id": "where-lowercase-london-is-empty", "sql": "SELECT CustomerName, City FROM Customers WHERE City = 'london';", "columns": ["CustomerName", "City"],
+     "rows": [], "mode": "multiset"},
+    {"id": "prove-products-and-prices", "sql": "SELECT ProductName, UnitPrice FROM Products;", "columns": ["ProductName", "UnitPrice"],
+     "rows": [["Notebook",4.5],["Pen Set",7],["Water Bottle",15],["Desk Lamp",28],["USB Cable",9.5],["Backpack",42]], "mode": "multiset"},
+    {"id": "predict-categories-keep-duplicates", "sql": "SELECT Category FROM Products;", "columns": ["Category"],
+     "rows": [["Stationery"],["Stationery"],["Accessories"],["Home Office"],["Electronics"],["Accessories"]], "mode": "multiset"}
+  ],
+  "errors": [
+    {"id": "misspelled-column", "sql": "SELECT CustomerName, Citty FROM Customers;", "message": "no such column: Citty"},
+    {"id": "wrong-table", "sql": "SELECT CustomerName, City FROM Customer;", "message": "no such table: Customer"},
+    {"id": "stray-comma", "sql": "SELECT CustomerName, City, FROM Customers;", "message": "near \"FROM\": syntax error"},
+    {"id": "unquoted-text", "sql": "SELECT CustomerName, City FROM Customers WHERE City = London;", "message": "no such column: London"},
+    {"id": "missing-from", "sql": "SELECT CustomerName, City Customers;", "message": "no such column: CustomerName"}
+  ]
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ch1-names",
+    "title": "Chapter 1, Experiment 1: customer names",
+    "prompt": "Return only the customers' names: one column, one row per customer.",
+    "solution": "SELECT CustomerName FROM Customers;",
+    "mode": "multiset"
+  },
+  {
+    "id": "ch1-prove",
+    "title": "Chapter 1, Prove you can do it: products and prices",
+    "prompt": "Which products do we sell, and what does each one cost? Return ProductName, then UnitPrice, one row per product.",
+    "solution": "SELECT ProductName, UnitPrice FROM Products;",
+    "mode": "multiset"
+  }
+]
