@@ -211,8 +211,8 @@
   // ---- answer checking -------------------------------------------------
   function norm(v) { return v === null ? null : (typeof v === 'number' ? v : String(v)); }
   function rowKey(r) { return JSON.stringify(r.map(norm)); }
-  function lastSet(sql) {
-    var sets = db.exec(sql);
+  function lastSet(database, sql) {
+    var sets = database.exec(sql);
     return sets.length ? sets[sets.length - 1] : null;
   }
   function compare(got, want, mode) {
@@ -242,10 +242,16 @@
     var id = els.select.value;
     var ch = challenges.filter(function (c) { return c.id === id; })[0];
     if (!ch) { show([message('info', 'Choose a task first.')]); return; }
-    var out = [];
+    var out = [], submittedDb = null, expectedDb = null;
     try {
-      var got = lastSet(els.sql.value);
-      var want = lastSet(ch.solution);
+      // Assess against fresh, disposable databases. Never execute student SQL in `db`.
+      // query_only also rejects writes hidden in multi-statement submissions.
+      submittedDb = openDatabase();
+      expectedDb = openDatabase();
+      submittedDb.exec('PRAGMA query_only = ON;');
+      expectedDb.exec('PRAGMA query_only = ON;');
+      var got = lastSet(submittedDb, els.sql.value);
+      var want = lastSet(expectedDb, ch.solution);
       var res = compare(got, want, ch.mode);
       out.push(message(res.ok ? 'ok' : 'err', res.text));
       if (got) {
@@ -253,7 +259,13 @@
         out.push(el('p', 'meta', got.values.length + ' rows, ' + got.columns.length + ' columns'));
       }
     } catch (e) {
-      out.push(message('err', 'The database says: ' + e.message));
+      var readonly = /readonly|read-only/i.test(e.message);
+      out.push(message('err', readonly
+        ? 'Check my answer accepts read-only queries only. Use Run to experiment with changes.'
+        : 'The database says: ' + e.message));
+    } finally {
+      if (submittedDb) submittedDb.close();
+      if (expectedDb) expectedDb.close();
     }
     show(out);
   }
