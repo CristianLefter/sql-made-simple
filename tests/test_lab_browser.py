@@ -102,13 +102,36 @@ with sync_playwright() as p:
     t = check("ch1-names", "SELECT 'Maya Chen' AS CustomerName FROM Customers;")
     if "values differ" not in t: fail(f"duplicate counts not enforced: {t}")
 
-    # 6. Deep link prefill
+    # 6. Regression: checking answers must never change the active database.
+    # The exact failing behavior observed in the published lab was an UPDATE
+    # entered in the editor followed by Check my answer (without Run).
+    t = check("ch1-prove", "UPDATE Products SET ProductName = 'Checker Test' WHERE ProductID = 6;")
+    if "read-only queries" not in t: fail(f"checker should reject UPDATE: {t}")
+    run_query(page, "SELECT ProductName FROM Products WHERE ProductID = 6;")
+    if read_result(page).get("rows") != [["Backpack"]]: fail("checker modified active data")
+
+    # A write followed by a matching SELECT must not bypass the checker.
+    t = check("ch1-prove", "UPDATE Products SET ProductName = 'Checker Test' WHERE ProductID = 6; SELECT ProductName, UnitPrice FROM Products;")
+    if "read-only queries" not in t: fail(f"multi-statement write accepted: {t}")
+    run_query(page, "SELECT ProductName FROM Products WHERE ProductID = 6;")
+    if read_result(page).get("rows") != [["Backpack"]]: fail("multi-statement checker modified active data")
+
+    # A separate read-only assessment should use the canonical dataset even
+    # when the learner has modified their own working copy via Run.
+    run_query(page, "UPDATE Products SET ProductName = 'Scratchpad' WHERE ProductID = 6;")
+    t = check("ch1-prove", "SELECT ProductName, UnitPrice FROM Products;")
+    if not t.startswith("Correct"): fail(f"checker leaked learner edits: {t}")
+    run_query(page, "SELECT ProductName FROM Products WHERE ProductID = 6;")
+    if read_result(page).get("rows") != [["Scratchpad"]]: fail("checker overwrote learner workspace")
+    page.click("#reset")
+
+    # 7. Deep link prefill
     page.goto(f"http://127.0.0.1:{PORT}/index.html?q=SELECT%20City%20FROM%20Customers%3B&challenge=ch1-prove")
     page.wait_for_selector("html[data-ready=true]")
     if page.input_value("#sql") != "SELECT City FROM Customers;" or page.input_value("#challenge-select") != "ch1-prove":
         fail("deep link did not prefill")
 
-    # 7. Screenshots: desktop light, desktop dark, phone
+    # 8. Screenshots: desktop light, desktop dark, phone
     page.goto(f"http://127.0.0.1:{PORT}/index.html"); page.wait_for_selector("html[data-ready=true]")
     run_query(page, "SELECT CustomerName, City\nFROM Customers;")
     out = ROOT / "tests" / "screenshots"; out.mkdir(exist_ok=True)
