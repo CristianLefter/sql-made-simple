@@ -10,7 +10,9 @@ Companion repository for the book *SQL Made Simple*. It has three parts:
 
 ## For readers
 
-Open the lab: **(your GitHub Pages address goes here)**
+New to SQL? Start with the [Quick Start](QUICK-START.md) and [Chapter 1](source/chapter-01.md).
+
+Open the lab: **https://cristianlefter.github.io/sql-made-simple/**
 
 1. The first query is already in the box. Press **Run** (or Ctrl+Enter). You should see **5**.
 2. Use **Check my answer** to test your own solutions to the book's tasks.
